@@ -84,12 +84,29 @@ def calculateTeamTurnoverPointsAverage(allPlays, team):
                 pointsTotal += 6
 
         drivesTotal += 1
+    if drivesTotal == 0:
+        return 0
     pointValue = pointsTotal/drivesTotal
     return pointValue
 
+# average points following a turnover ended up equating to 2.607978650057921
+def calculateTotalTurnoverPointValue(allPlays):
+    teams = list(allPlays.posteam.unique())
+    totalTeams = len(teams)
+    totalPointValue = 0
+    for team in teams:
+        totalPointValue += calculateTeamTurnoverPointsAverage(allPlays, team)
+
+    averageValue = totalPointValue / totalTeams
+    return averageValue
+
+
+
 if __name__ == '__main__':
-    allPlays = nfl.import_pbp_data([2022])
+    years = list(range(1999, 2024))
+    allPlays = nfl.import_pbp_data([2021])
     #print(getAllTeamTurnoverDriveIds(allPlays, 'NYJ').to_string())
     #print(getTeamGameDrives(allPlays, '2022_01_BAL_NYJ', 'NYJ').to_string())
     #print(getDrive(allPlays, '24.0', '2022_01_BAL_NYJ'))
-    print(calculateTeamTurnoverPointsAverage(allPlays, 'NYJ'))
+    #print(calculateTeamTurnoverPointsAverage(allPlays, 'NYJ'))
+    print(calculateTotalTurnoverPointValue(allPlays))
