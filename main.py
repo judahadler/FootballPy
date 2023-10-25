@@ -30,7 +30,7 @@ def getDriveResult(drive_num, game_id, allPlays):
 
 def getDrive(allPlays, drive_num, game_id):
     df = allPlays[(allPlays['game_id'] == game_id) & (allPlays['drive'] == drive_num)]
-    dfNew = df[['game_id', 'play_id', 'defteam', 'posteam', 'drive', 'series_result', 'drive_play_id_ended']]
+    dfNew = df[['game_id', 'play_id', 'defteam', 'posteam', 'drive', 'series_result', 'extra_point_result', 'two_point_conv_result','drive_play_id_ended']]
     last_rows = ~dfNew.duplicated(subset=['drive', 'game_id'], keep='last')
     dfNew = dfNew[last_rows]
     return dfNew
@@ -68,11 +68,28 @@ def getAllDrivesAfterTurnover(allPlays, team):
 
 def calculateTeamTurnoverPointsAverage(allPlays, team):
     driveResults = getAllDrivesAfterTurnover(allPlays, team)
+    pointsTotal = 0
+    drivesTotal = 0
+    for index, row in driveResults.iterrows():
+        if row['series_result'] == 'QB kneel' or row['series_result'] == 'End of half':
+            continue
+        elif row['series_result'] == 'Field goal':
+            pointsTotal += 3
+        elif row['series_result'] == 'Touchdown':
+            if row['extra_point_result'] == 'good':
+                pointsTotal += 7
+            elif row['two_point_conv_result'] == 'good':
+                pointsTotal += 8
+            else:
+                pointsTotal += 6
 
+        drivesTotal += 1
+    pointValue = pointsTotal/drivesTotal
+    return pointValue
 
 if __name__ == '__main__':
     allPlays = nfl.import_pbp_data([2022])
     #print(getAllTeamTurnoverDriveIds(allPlays, 'NYJ').to_string())
     #print(getTeamGameDrives(allPlays, '2022_01_BAL_NYJ', 'NYJ').to_string())
     #print(getDrive(allPlays, '24.0', '2022_01_BAL_NYJ'))
-    print(getAllDrivesAfterTurnover(allPlays, 'NYJ'))
+    print(calculateTeamTurnoverPointsAverage(allPlays, 'NYJ'))
