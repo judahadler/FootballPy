@@ -70,7 +70,7 @@ def calculateTeamTurnoverPointsAverageConcurrent(allPlays, teams, num_threads=10
 
     return results
 
-# average points following a turnover ended up equating to 2.607978650057921
+# average points following a turnover ended up equating to 2.607978650057921 - this does not factor in pick 6's
 def calculateTotalTurnoverPointValue(allPlays, num_threads=10):
     teams = list(allPlays.posteam.unique())
     team_point_values = calculateTeamTurnoverPointsAverageConcurrent(allPlays, teams, num_threads)
@@ -78,7 +78,14 @@ def calculateTotalTurnoverPointValue(allPlays, num_threads=10):
     averageValue = sum(team_point_values) / len(teams)
     return averageValue
 
+def findQuarterEndScore(allPlays, game_id):
+    df = allPlays[(allPlays['game_id'] == game_id) & ((allPlays['quarter_end'] == 1) | (allPlays['game_seconds_remaining'] == 0))]
+    dfNew = df[['game_id', 'play_id', 'home_team', 'away_team', 'total_home_score', 'total_away_score', 'qtr', 'quarter_end']]
+    return dfNew
+
 if __name__ == '__main__':
     years = list(range(1999, 2024))
-    allPlays = nfl.import_pbp_data(years)
-    print(calculateTotalTurnoverPointValue(allPlays, num_threads=10))
+    allPlays = nfl.import_pbp_data([2022])
+    game_id = '2022_01_BAL_NYJ'
+    print(findQuarterEndScore(allPlays, game_id).to_string())
+    #print(calculateTotalTurnoverPointValue(allPlays, num_threads=10))
