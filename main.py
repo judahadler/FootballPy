@@ -1,8 +1,6 @@
 import nfl_data_py as nfl
 import pandas as pd
 
-import numpy as np
-from sklearn.datasets import load_iris
 
 def getAllJetsTurnovers(allPlays):
 
@@ -69,7 +67,8 @@ def getAllDrivesAfterTurnover(allPlays, team):
     return driveResults
 
 def calculateTeamTurnoverPointsAverage(allPlays, team):
-    driveResults = getAllDrivesAfterTurnover
+    driveResults = getAllDrivesAfterTurnover(allPlays, team)
+
 
 if __name__ == '__main__':
     allPlays = nfl.import_pbp_data([2022])
