@@ -1,40 +1,14 @@
 import nfl_data_py as nfl
 import pandas as pd
-
-
-def getAllJetsTurnovers(allPlays):
-
-    #important cols:
-    #drive, down, yards_gained, ydstogo, play_type, home_team, away_team
-
-    turnovers = 0
-    turnoverDriveIds = []
-    for ind in allPlays.index:
-        if allPlays['defteam'][ind] == "NYJ":
-            if allPlays['series_result'][ind] == "Turnover":
-                if allPlays['fumble'][ind] or allPlays['interception'][ind]:
-                    if (allPlays['game_id'][ind] , allPlays['drive'][ind]) not in turnoverDriveIds:
-                        turnoverDriveIds.append((allPlays['game_id'][ind] , allPlays['drive'][ind], allPlays['drive'][ind]))
-                        turnovers += 1
-
-    print(turnoverDriveIds)
-    print(f"Turnovers: {turnovers}")
-
-
-
-def getDriveResult(drive_num, game_id, allPlays):
-
-    return allPlays.loc[
-                (allPlays['game_id'] == game_id) & (allPlays['drive'] == drive_num),
-                ['game_id', 'drive','series_result']].iloc[0]
+from concurrent.futures import ThreadPoolExecutor
 
 def getDrive(allPlays, drive_num, game_id):
     df = allPlays[(allPlays['game_id'] == game_id) & (allPlays['drive'] == drive_num)]
     dfNew = df[['game_id', 'play_id', 'defteam', 'posteam', 'drive', 'series_result', 'extra_point_result', 'two_point_conv_result','drive_play_id_ended']]
+    #This next snippet will figure out which rows are NOT duplicates a
     last_rows = ~dfNew.duplicated(subset=['drive', 'game_id'], keep='last')
     dfNew = dfNew[last_rows]
     return dfNew
-
 
 def getTeamGameDrives(allPlays, game_id, team):
     df = allPlays[(allPlays['game_id'] == game_id) & (allPlays['posteam'] == team)]
@@ -89,24 +63,22 @@ def calculateTeamTurnoverPointsAverage(allPlays, team):
     pointValue = pointsTotal/drivesTotal
     return pointValue
 
+def calculateTeamTurnoverPointsAverageConcurrent(allPlays, teams, num_threads=10):
+    with ThreadPoolExecutor(max_workers=num_threads) as executor:
+        # Calculate point values concurrently for each team
+        results = list(executor.map(calculateTeamTurnoverPointsAverage, [allPlays] * len(teams), teams))
+
+    return results
+
 # average points following a turnover ended up equating to 2.607978650057921
-def calculateTotalTurnoverPointValue(allPlays):
+def calculateTotalTurnoverPointValue(allPlays, num_threads=10):
     teams = list(allPlays.posteam.unique())
-    totalTeams = len(teams)
-    totalPointValue = 0
-    for team in teams:
-        totalPointValue += calculateTeamTurnoverPointsAverage(allPlays, team)
+    team_point_values = calculateTeamTurnoverPointsAverageConcurrent(allPlays, teams, num_threads)
 
-    averageValue = totalPointValue / totalTeams
+    averageValue = sum(team_point_values) / len(teams)
     return averageValue
-
-
 
 if __name__ == '__main__':
     years = list(range(1999, 2024))
-    allPlays = nfl.import_pbp_data([2021])
-    #print(getAllTeamTurnoverDriveIds(allPlays, 'NYJ').to_string())
-    #print(getTeamGameDrives(allPlays, '2022_01_BAL_NYJ', 'NYJ').to_string())
-    #print(getDrive(allPlays, '24.0', '2022_01_BAL_NYJ'))
-    #print(calculateTeamTurnoverPointsAverage(allPlays, 'NYJ'))
-    print(calculateTotalTurnoverPointValue(allPlays))
+    allPlays = nfl.import_pbp_data(years)
+    print(calculateTotalTurnoverPointValue(allPlays, num_threads=10))
