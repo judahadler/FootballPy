@@ -6,13 +6,15 @@ if __name__ == '__main__':
     pbp_py = nfl.import_pbp_data([2023])
     filter_crit = 'play_type == "pass" & air_yards.notnull()'
 
+
+    # Get passing plays
     pbp_py_p = (
         pbp_py.query(filter_crit)
         .groupby(["passer_id", "passer"])
         .agg({"air_yards": ["count", "mean"]})
     )
 
-    print(pbp_py_p.to_string())
+    #print(pbp_py_p.to_string())
 
     pbp_py_p.columns = list(map("_".join, pbp_py_p.columns.values))
     sort_crit = "air_yards_count > 100"
