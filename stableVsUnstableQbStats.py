@@ -9,6 +9,7 @@ if __name__ == '__main__':
     #seasons = range(2016, 2017 + 1)
     seasons = range(2020, 2023 + 1)
     pbp_py = nfl.import_pbp_data(seasons)
+
     # This filter will remove any play that is not a pass (or is negated by a penalty).
     # It will also remove any pass plays without an intended WR - spikes, batted balls, throwaways
     filter_crit = 'play_type == "pass" & air_yards.notnull()'
@@ -16,9 +17,15 @@ if __name__ == '__main__':
     # Get passing plays
     pbp_py_p = pbp_py.query(filter_crit).reset_index()
 
+    # Find median for air yards
+    print("All Air Yards Stats Described: \n" +
+          pbp_py_p["air_yards"].describe().to_string() + "\n")
+
     # define pass type (long vs short)
+    # 20 yards is used for the cutoff for the majority of the chapter
+    # 5 yards is the median for air yards so it was used as the new cut off for exercise 4
     pbp_py_p["pass_length_air_yards"] = np.where(
-        pbp_py_p["air_yards"] >= 20, "long", "short"
+        pbp_py_p["air_yards"] >= 5, "long", "short"
     )
 
     # Make incomplete passes set to 0 and not NA (For this exercise)
@@ -37,7 +44,7 @@ if __name__ == '__main__':
     # Using describe function to see important data information
     print("All Passing Stats Described: \n" +
           pbp_py_p["passing_yards"].describe().to_string() + "\n")
-
+    
     # Notice the difference between the lower percentiles in both
     print("All Short Passing Stats Described: \n" +
           short_passes["passing_yards"].describe().to_string() + "\n")
@@ -150,16 +157,16 @@ if __name__ == '__main__':
         .to_string()
         )
 
-    # # Just two additional lines to take a quick look into the dataframe before continuing
-    # pbp_py_p_s_pl.info()
-    # print(len(pbp_py_p_s_pl.passer_id.unique()))
+    # Just two additional lines to take a quick look into the dataframe before continuing
+    pbp_py_p_s_pl.info()
+    print(len(pbp_py_p_s_pl.passer_id.unique()))
 
-    # #Generate scatter plot to visualize any correlation between adjacent seasons YPA
-    # sns.lmplot(data=pbp_py_p_s_pl,
-    #            x="ypa",
-    #            y="ypa_last",
-    #            col="pass_length_air_yards")
-    # plt.show()
+    #Generate scatter plot to visualize any correlation between adjacent seasons YPA
+    sns.lmplot(data=pbp_py_p_s_pl,
+               x="ypa",
+               y="ypa_last",
+               col="pass_length_air_yards")
+    plt.show()
 
     # Assess correlation numerically with pandas
     print(
