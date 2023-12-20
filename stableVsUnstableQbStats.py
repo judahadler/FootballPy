@@ -1,4 +1,3 @@
-import pandas as pd
 import numpy as np
 import nfl_data_py as nfl
 import seaborn as sns
@@ -274,92 +273,111 @@ def exercise3(pbp_py_p):
         .to_string()
     )
 
+# Did this for fun - generate scatter plot of YPC related to air yards
+def generateYpcToAirYards(pbp_py):
+    filter_crit = 'play_type == "pass" & complete_pass == True & air_yards.notnull() & yards_after_catch.notnull()'
+
+    # Get passing plays
+    pbp_py_p = pbp_py.query(filter_crit).reset_index()
+
+    pbp_pass_ave = pbp_py_p \
+        .groupby(["air_yards"]) \
+        .agg({"yards_after_catch": ["mean"]})
+
+    pbp_pass_ave.columns = list(map("_".join, pbp_pass_ave.columns))
+    pbp_pass_ave.reset_index(inplace=True)
+    sns.regplot(data=pbp_pass_ave, x="air_yards", y="yards_after_catch_mean")
+    plt.show()
+
 
 if __name__ == '__main__':
 
-    #seasons = range(2016, 2017 + 1)
-    seasons = range(2020, 2023 + 1)
+    seasons = range(2016, 2023 + 1)
     pbp_py = nfl.import_pbp_data(seasons)
 
-    # Get just passing data set with additional column for short and long pass type
-    # Second argument will serve as the cut off for long vs short passes
-    pbp_py_p = preparePassingDataSet(pbp_py, 20)
+    # # Get just passing data set with additional column for short and long pass type
+    # # Second argument will serve as the cut off for long vs short passes
+    # pbp_py_p = preparePassingDataSet(pbp_py, 20)
+    #
+    # short_passes = pbp_py_p.query('pass_length_air_yards == "short"')
+    # long_passes = pbp_py_p.query('pass_length_air_yards == "long"')
+    #
+    # # Set seaborn theme
+    # sns.set_theme(style="whitegrid", palette="colorblind")
+    #
+    # ####################################################################################################################
+    #
+    # # Call function to attain additional metrics on the data set
+    # displayDataSetInformation(pbp_py_p, short_passes, long_passes)
+    #
+    # # Show Passing Yards depth per play histogram
+    # sns.displot(data=pbp_py, x="passing_yards")
+    # plt.show()
+    #
+    # ####################################################################################################################
+    #
+    # # Generate Historgrams
+    # generatePassingYardsHistograms(short_passes, long_passes)
+    #
+    # ####################################################################################################################
+    #
+    # # Boxplots
+    # generatePassingBoxPlots(pbp_py_p)
+    #
+    # ####################################################################################################################
+    #
+    # # Player level stability of seasonal YPA
+    # # Wrangle data to organize/group by qb and season
+    # pbp_py_p_s = prepareQBDataSet(pbp_py_p)
+    #
+    # # Using the data to draw a conclusion
+    # # Wrangle data to further organize by pass length
+    # pbp_py_p_s_pl = preparePassLengthDataSet(pbp_py_p)
+    #
+    # # See some examples
+    # print(
+    #     pbp_py_p_s_pl[["pass_length_air_yards", "passer",
+    #                    "season", "ypa", "ypa_last"]]
+    #     .query('passer == "T.Brady" | passer == "A.Rodgers"')
+    #     .sort_values(["passer", "pass_length_air_yards", "season"])
+    #     .to_string()
+    #     )
+    #
+    # # Generate scatter plot to see year to year stability of YPA on long and short passes
+    # generateYPAScatterPlot(pbp_py_p_s_pl)
+    #
+    # # See Leaders for 2023:
+    # print(
+    #     pbp_py_p_s_pl
+    #     .query('pass_length_air_yards == "long" & season == 2023')[["passer_id", "passer", "ypa"]]
+    #     .sort_values(["ypa"], ascending=False)
+    #     .head(10)
+    #     .to_string()
+    # )
+    #
+    # # See Worst Qualified for 2023:
+    # print(
+    #     pbp_py_p_s_pl
+    #     .query('pass_length_air_yards == "long" & season == 2023')[["passer_id", "passer", "ypa"]]
+    #     .sort_values(["ypa"], ascending=True)
+    #     .head(10)
+    #     .to_string()
+    # )
+    #
+    # ####################################################################################################################
+    #
+    # # #Exercise 1: Create a histogram for EPA per pass attempt
+    # exercise1(pbp_py_p)
+    #
+    # # #Exercise 2: Create a boxplot for EPA per pass type
+    # exercise2(pbp_py_p)
+    #
+    # #Exercise 3: Player level stability of seasonal EPA
+    # exercise3(pbp_py_p)
+    #
+    # #Exercise 4: Find median for 'air_yards' and use that as the cutoff for long/short passes
+    # # Solved by changing the cutoff variable in the preparePassingDataSet function call
 
-    short_passes = pbp_py_p.query('pass_length_air_yards == "short"')
-    long_passes = pbp_py_p.query('pass_length_air_yards == "long"')
-
-    # Set seaborn theme
-    sns.set_theme(style="whitegrid", palette="colorblind")
-
-    ####################################################################################################################
-
-    # Call function to attain additional metrics on the data set
-    displayDataSetInformation(pbp_py_p, short_passes, long_passes)
-
-    # Show Passing Yards depth per play histogram
-    sns.displot(data=pbp_py, x="passing_yards")
-    plt.show()
-
-    ####################################################################################################################
-
-    # Generate Historgrams
-    generatePassingYardsHistograms(short_passes, long_passes)
-
-    ####################################################################################################################
-
-    # Boxplots
-    generatePassingBoxPlots(pbp_py_p)
-
-    ####################################################################################################################
-
-    # Player level stability of seasonal YPA
-    # Wrangle data to organize/group by qb and season
-    pbp_py_p_s = prepareQBDataSet(pbp_py_p)
-
-    # Using the data to draw a conclusion
-    # Wrangle data to further organize by pass length
-    pbp_py_p_s_pl = preparePassLengthDataSet(pbp_py_p)
-
-    # See some examples
-    print(
-        pbp_py_p_s_pl[["pass_length_air_yards", "passer",
-                       "season", "ypa", "ypa_last"]]
-        .query('passer == "T.Brady" | passer == "A.Rodgers"')
-        .sort_values(["passer", "pass_length_air_yards", "season"])
-        .to_string()
-        )
-
-    # Generate scatter plot to see year to year stability of YPA on long and short passes
-    generateYPAScatterPlot(pbp_py_p_s_pl)
-
-    # See Leaders for 2023:
-    print(
-        pbp_py_p_s_pl
-        .query('pass_length_air_yards == "long" & season == 2023')[["passer_id", "passer", "ypa"]]
-        .sort_values(["ypa"], ascending=False)
-        .head(10)
-        .to_string()
-    )
-
-    # See Worst Qualified for 2023:
-    print(
-        pbp_py_p_s_pl
-        .query('pass_length_air_yards == "long" & season == 2023')[["passer_id", "passer", "ypa"]]
-        .sort_values(["ypa"], ascending=True)
-        .head(10)
-        .to_string()
-    )
-
-    ####################################################################################################################
-
-    # #Exercise 1: Create a histogram for EPA per pass attempt
-    exercise1(pbp_py_p)
-
-    # #Exercise 2: Create a boxplot for EPA per pass type
-    exercise2(pbp_py_p)
-
-    #Exercise 3: Player level stability of seasonal EPA
-    exercise3(pbp_py_p)
-
-    #Exercise 4: Find median for 'air_yards' and use that as the cutoff for long/short passes
-    # Solved by changing the cutoff variable in the preparePassingDataSet function call
+    # # Added my own prompt from my father's curiosity to see the relationship between ypc and air yards
+    # # Note that the higher end is capped by the endzone
+    #generateYpcToAirYards(pbp_py)
