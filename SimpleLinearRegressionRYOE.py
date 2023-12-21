@@ -91,35 +91,35 @@ if __name__ == '__main__':
     pbp = nfl.import_pbp_data(seasons)
     pbp_run = prepareRushingData(pbp)
 
-    # # Generate Scatter Plots for rushing yds vs yards to go
+    # Generate Scatter Plots for rushing yds vs yards to go
     sns.set_theme(style="whitegrid", palette="colorblind")
-    # generateRushYardsScatterPlots(pbp_run, "ydstogo")
-    # generateAveragedScatterPlot(pbp_run, "ydstogo")
+    generateRushYardsScatterPlots(pbp_run, "ydstogo")
+    generateAveragedScatterPlot(pbp_run, "ydstogo")
 
-    # # Simple linear regression for rushing yards as predicted by yards to go
-    # yards_to_go = smf.ols(formula='rushing_yards ~ 1 + ydstogo', data=pbp_run)
+    # Simple linear regression for rushing yards as predicted by yards to go
+    yards_to_go = smf.ols(formula='rushing_yards ~ 1 + ydstogo', data=pbp_run)
 
-    # # Based on the extremely low R-squared value we see the data wasn't predicted well
-    # # For reference: an R-squared of 1.00 corresponds to the model perfectly fitting the data
-    # print(yards_to_go.fit().summary())
-    #
-    # # Add a ryoe column to the dataframe by using the residuals of the model
-    # pbp_run["ryoe"] = yards_to_go.fit().resid
+    # Based on the extremely low R-squared value we see the data wasn't predicted well
+    # For reference: an R-squared of 1.00 corresponds to the model perfectly fitting the data
+    print(yards_to_go.fit().summary())
+
+    # Add a ryoe column to the dataframe by using the residuals of the model
+    pbp_run["ryoe"] = yards_to_go.fit().resid
 
     ####################################################################################################################
 
     # Generate RYOE data set which includes season-level data for a rusher's RYOE
-    #ryoe = generateRYOEData(pbp_run, 50)
+    ryoe = generateRYOEData(pbp_run, 50)
 
     ####################################################################################################################
 
     # Is RYOE a better metric?  Testing predictable powers of RYOE.
-    #ryoeStabilityAnalysis(ryoe)
+    ryoeStabilityAnalysis(ryoe)
 
     ####################################################################################################################
 
     # # Exercise 1: change threshold to 100 carries
     # exercise1(pbp_run)
 
-    # Exercise 3: Change yards to go into yardline_100
-    exercise3(pbp_run)
+    # # Exercise 3: Change yards to go into yardline_100
+    # exercise3(pbp_run)
