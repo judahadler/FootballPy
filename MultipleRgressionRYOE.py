@@ -94,11 +94,12 @@ def ryoeModel(pbp_run):
         "ryoe_count": "n",
         "ryoe_sum": "ryoe_total",
         "ryoe_mean": "ryoe_per",
-        "rushing_yards_mean": "yards_per_carry"}) \
+        "rushing_yards_mean": "yards_per_carry"})\
         .query("n > 50")
-
-    #print(ryoe.sort_values("ryoe_total", ascending=False))
-    #print(ryoe.sort_values("ryoe_per", ascending=False))
+    print(ryoe[ryoe['rusher'].str.contains('Hall')])
+    print(ryoe.sort_values("yards_per_carry", ascending=False, ignore_index=True).head(30))
+    #print(ryoe.sort_values("ryoe_total", ascending=False, ignore_index=True).head(20))
+    #print(ryoe.sort_values("ryoe_per", ascending=False, ignore_index=True).head(20))
 
     return ryoe
 
@@ -122,7 +123,7 @@ def ryoeStabilityAnalysis(ryoe):
 
 if __name__ == '__main__':
     # Prepare Rushing Data
-    seasons = range(2016, 2022 + 1)
+    seasons = range(2023, 2023 + 1)
     pbp = nfl.import_pbp_data(seasons)
 
     pbp_run = prepareRushingData(pbp)
@@ -158,7 +159,7 @@ if __name__ == '__main__':
 ########################################################################################################################
 
     # Stability analysis on new RYOE stat
-    ryoeStabilityAnalysis(ryoe)
+    #ryoeStabilityAnalysis(ryoe)
 
 ########################################################################################################################
 
