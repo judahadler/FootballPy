@@ -7,7 +7,7 @@ import statsmodels.formula.api as smf
 if __name__ == '__main__':
     # Prepare Rushing Data
     sns.set_theme(style="whitegrid", palette="colorblind")
-    seasons = range(2018, 2023 + 1)
+    seasons = range(2000, 2023 + 1)
     pbp = nfl.import_pbp_data(seasons)
 
     pbp_tds_tos_pass = pbp.groupby(['passer', 'passer_id', 'season']).agg({'pass_touchdown': ["sum","count"],
@@ -17,7 +17,7 @@ if __name__ == '__main__':
     pbp_tds_tos_pass.columns = [f"{col[0]}_{col[1]}" if col[1] != '' else col[0] for col in pbp_tds_tos_pass.columns]
     pbp_tds_tos_pass.reset_index(inplace=True)
 
-    pbp_tds_tos_rush = pbp.groupby(['rusher', 'rusher_id', 'season']).agg(
+    pbp_tds_tos_rush = pbp.groupby(['rusher_id', 'season']).agg(
         {'rush_touchdown': ["sum"],
          'fumble_lost': ["sum"]})
     pbp_tds_tos_rush.columns = [f"{col[0]}_{col[1]}" if col[1] != '' else col[0] for col in pbp_tds_tos_rush.columns]
@@ -35,8 +35,9 @@ if __name__ == '__main__':
     pbp_tds_tos['total_tos'] = pbp_tds_tos['interception_sum'] + pbp_tds_tos['fumble_lost_sum_x'] + pbp_tds_tos['fumble_lost_sum_y']
     pbp_tds_tos['td_vs_to_ratio'] = pbp_tds_tos['total_tds'] / pbp_tds_tos['total_tos']
     #print(pbp_tds_tos.head(10))
-    #pbp_tds_tos = pbp_tds_tos.query("attempts > 500")
-    pbp_tds_tos = pbp_tds_tos.query("passer == 'J.Allen'")
+    pbp_tds_tos = pbp_tds_tos.query("attempts > 500")
+    #pbp_tds_tos = pbp_tds_tos.query("passer == 'J.Allen'")
     pbp_tds_tos_sorted = pbp_tds_tos[['passer', 'season', 'td_vs_to_ratio', 'total_tds', 'total_tos']].sort_values(by='td_vs_to_ratio', ascending=False)
-    pbp_tds_tos_sorted = pbp_tds_tos_sorted
-    print(pbp_tds_tos_sorted.head(25))
+    #pd.set_option('display.max_columns', None)
+    print(pbp_tds_tos_sorted.head(50))
+    print(pbp_tds_tos_sorted.describe())
