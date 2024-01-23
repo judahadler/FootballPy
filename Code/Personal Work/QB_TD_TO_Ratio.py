@@ -2,6 +2,10 @@ import nfl_data_py as nfl
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+# This code attempts to graph the trends in each quartile of nfl qbs td:to ration (as well as totals)
+# Can change the filers to find specific players or cutoffs as shown
+
+
 def organizeTDTOData(pbp):
     # get passing play data for each qb
     pbp_tds_tos_pass = pbp.groupby(['passer', 'passer_id', 'season']).agg({'pass_touchdown': ["sum", "count"],

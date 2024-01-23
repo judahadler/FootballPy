@@ -1,11 +1,10 @@
 import nfl_data_py as nfl
 import seaborn as sns
 import matplotlib.pyplot as plt
-import statsmodels.formula.api as smf
 
+# This code displays the total points scored per game per season dating back to 2000
 
 if __name__ == '__main__':
-    # Prepare Rushing Data
     sns.set_theme(style="whitegrid", palette="colorblind")
     seasons = range(2000, 2023 + 1)
     pbp = nfl.import_pbp_data(seasons)

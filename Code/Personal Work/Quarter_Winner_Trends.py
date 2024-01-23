@@ -1,5 +1,8 @@
 import nfl_data_py as nfl
-import pandas as pd
+
+# This code attempts to draw a relationship between different quarters' score differential and the outcome of the game
+
+# TODO: Finish analysis - run model to see which quarter pts differential is closest related to final outcome (if any)
 
 def findQuarterEndScore(allPlays, game_id):
     df = allPlays[

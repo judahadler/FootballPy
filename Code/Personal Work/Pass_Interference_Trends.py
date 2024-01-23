@@ -1,11 +1,12 @@
 import nfl_data_py as nfl
 import seaborn as sns
 import matplotlib.pyplot as plt
-import statsmodels.formula.api as smf
 
+# This code attempts to visualize the penalty yards per game for each season dating back to 2000 (No trends jumped off
+# the page)
 
 if __name__ == '__main__':
-    # Prepare Rushing Data
+    # Prepare Penalty Data
     sns.set_theme(style="whitegrid", palette="colorblind")
     seasons = range(2000, 2023 + 1)
     pbp = nfl.import_pbp_data(seasons)
@@ -20,7 +21,7 @@ if __name__ == '__main__':
     pbp_pass_interference_season.columns = list(map("_".join, pbp_pass_interference_season.columns))
     pbp_pass_interference_season.reset_index(inplace=True)
 
-    # Create a plot to visualize the trend of mean penalty yards per penalty type over seasons
+    # Create a plot to visualize the trend of mean penalty yards per PI over seasons
     sns.lineplot(data=pbp_pass_interference_season,
                x="season",
                y="penalty_yards_mean",

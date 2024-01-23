@@ -6,37 +6,14 @@ import pandas as pd
 if __name__ == '__main__':
     # Prepare Penalty Data
     sns.set_theme(style="whitegrid", palette="colorblind")
-    seasons = range(2000, 2023 + 1)
+    seasons = range(2023, 2023 + 1)
     pbp = nfl.import_pbp_data(seasons)
 
-    filtered_pbp = pbp[pbp['penalty'] == 1]
+    filtered_pbp = pbp[pbp['game_id'] == '2023_05_NYJ_DEN']
 
-    pbp_penalty = filtered_pbp.groupby(['game_id', 'penalty_team', 'season']).agg(
-        {'penalty_yards': 'sum'}).reset_index()
+    columns_to_select = ['play_id', 'posteam', 'defteam', 'qtr', 'drive', 'total_home_score', 'total_away_score',
+                         'series_result', 'extra_point_result', 'two_point_conv_result']
 
-    penalty_team_means = pbp_penalty.groupby(['penalty_team', 'season']).agg({"penalty_yards": ["sum", "count"]})
-    penalty_team_means.columns = list(map("_".join, penalty_team_means.columns))
-    penalty_team_means.reset_index(inplace=True)
+    filtered_pbp_subset = filtered_pbp.loc[:, columns_to_select]
 
-    penalty_team_means['penalty_yards_per_game'] = penalty_team_means['penalty_yards_sum'] / penalty_team_means[
-        'penalty_yards_count']
-
-    teams = ['NE', 'NYJ']
-    penalty_team_means_teams = penalty_team_means[penalty_team_means['penalty_team'].isin(teams)]
-    league_avg_df = penalty_team_means.groupby('season').agg({"penalty_yards_per_game": "mean"}).reset_index()
-    league_avg_df['penalty_team'] = 'league_avg'
-
-    penalty_team_means_final = pd.concat([penalty_team_means_teams, league_avg_df], ignore_index=True)
-    penalty_team_means_final = penalty_team_means_final.sort_values(by=['season', 'penalty_team'])
-    print(penalty_team_means_final)
-
-    palette = {'NE': 'navy', 'NYJ': 'green', 'league_avg': 'orange'}
-    plt.figure(figsize=(12, 6))
-    sns.barplot(data=penalty_team_means_final,
-                x='season',
-                y='penalty_yards_per_game',
-                hue='penalty_team',
-                palette=palette)
-
-    plt.title('AFC EAST vs League Average Penalty Yards Per Game Over Seasons')
-    plt.show()
+    print(filtered_pbp_subset.to_string())
