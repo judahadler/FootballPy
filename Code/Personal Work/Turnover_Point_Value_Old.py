@@ -27,40 +27,39 @@ def getDrive(allPlays, drive_num, game_id):
     dfNew = dfNew[last_rows]
     return dfNew
 
-# Retrieves information about all drives of a specific team in a game.
-def getTeamGameDrives(allPlays, game_id, team):
-    df = allPlays[(allPlays['game_id'] == game_id) & (allPlays['posteam'] == team)]
+# Retrieves information about all drives of a specific game.
+def getGameDrives(allPlays, game_id):
+    df = allPlays[(allPlays['game_id'] == game_id)]
     return df[
         ['game_id', 'play_id', 'defteam', 'posteam', 'yardline_100', 'half_seconds_remaining', 'drive', 'series_result',
          'drive_ended_with_score']]
 
-# Retrieves drive IDs where turnovers occurred for the opposing team.
-def getDriveIdOfTurnovers(allPlays, game_id, team):
-    #Get all rows where the team argument forced a turnover in a given game
+# Retrieves drive IDs where turnovers occurred.
+def getDriveIdOfTurnoversSeason(allPlays, game_id, season):
+    #Get all rows where a team forced a turnover in a given game
     df = allPlays[
-        (allPlays['game_id'] == game_id) & (allPlays['defteam'] == team) & (allPlays['series_result'] == 'Turnover')]
-    dfNew = df[['play_id', 'defteam', 'posteam', 'yardline_100', 'half_seconds_remaining', 'drive', 'series_result',
-                'drive_ended_with_score', 'qtr']]
+        (allPlays['game_id'] == game_id) & (allPlays['series_result'] == 'Turnover') & (allPlays['season'] == season)]
+    dfNew = df[['season', 'play_id', 'defteam', 'posteam', 'yardline_100', 'half_seconds_remaining',
+                'drive', 'series_result', 'drive_ended_with_score', 'qtr']]
     return dfNew.drop_duplicates(subset=['drive'])
 
-# Retrieves all drive IDs where a specific team's defense caused a turnover.
-def getAllTeamTurnoverDriveIds(allPlays, team):
+# Retrieves all drive IDs where a defense caused a turnover.
+def getAllTurnoverDriveIdsSeason(allPlays, season):
     # Check to also keep defensive tds
-    df = allPlays[(allPlays['defteam'] == team) &
-                  ((allPlays['series_result'] == 'Turnover') | (allPlays['series_result'] == 'Opp touchdown') &
-                   ((allPlays['interception'] == 1) | (allPlays['fumble'] == 1)))]
+    df = allPlays[((allPlays['series_result'] == 'Turnover') | (allPlays['series_result'] == 'Opp touchdown') &
+                   ((allPlays['interception'] == 1) | (allPlays['fumble'] == 1)) & (allPlays['season'] == season))]
 
-    dfNew = df[['game_id', 'play_id', 'defteam', 'posteam', 'drive', 'series_result', 'extra_point_result',
+    dfNew = df[['season', 'game_id', 'play_id', 'defteam', 'posteam', 'drive', 'series_result', 'extra_point_result',
                 'two_point_conv_result', 'qtr', 'return_touchdown', 'total_home_score', 'total_away_score']]
     dfNew = dfNew.drop_duplicates(subset=['drive', 'game_id'])
-    return dfNew[['game_id', 'drive', 'series_result', 'defteam', 'posteam', 'extra_point_result',
+    return dfNew[['season', 'game_id', 'drive', 'series_result', 'defteam', 'posteam', 'extra_point_result',
                   'two_point_conv_result', 'qtr', 'return_touchdown', 'total_home_score', 'total_away_score']]
 
-# Retrieves information about all drives that occurred after turnovers caused by the specified team.
-def getAllDrivesAfterTurnover(allPlays, team):
+# Retrieves information about all drives that occurred after turnovers.
+def getAllDrivesAfterTurnover(allPlays, season):
 
     driveResults = pd.DataFrame()
-    ids = getAllTeamTurnoverDriveIds(allPlays, team)
+    ids = getAllTurnoverDriveIdsSeason(allPlays, season)
     ids = ids.reset_index()
 
     for index, row in ids.iterrows():
@@ -101,13 +100,13 @@ def getAllDrivesAfterTurnover(allPlays, team):
 
     return driveResults
 
-# Calculates the average points scored on drives following turnovers caused by the specified team.
-def calculateTeamTurnoverPointsAverage(allPlays, team):
-    driveResults = getAllDrivesAfterTurnover(allPlays, team)
+# average points following a turnover ended up equating to 2.9600137909440063 - this does not factor in pick 6's
+def calculateTurnoverPointsAveragePerSeason(allPlays, season):
+    driveResults = getAllDrivesAfterTurnover(allPlays, season)
     pointsTotal = 0
     drivesTotal = 0
     for index, row in driveResults.iterrows():
-        if row['series_result'] == 'QB kneel' or row['series_result'] == 'End of half':
+        if row['series_result'] == 'QB kneel':
             continue
         elif row['series_result'] == 'Field goal':
             pointsTotal += 3
@@ -123,29 +122,34 @@ def calculateTeamTurnoverPointsAverage(allPlays, team):
     if drivesTotal == 0:
         return 0
     pointValue = pointsTotal / drivesTotal
-    return pointValue
+    season_turnover_data = pd.DataFrame({
+        'season': [season],
+        'total_post_turnover_drives': [drivesTotal],
+        'total_post_turnover_points': [pointsTotal],
+        'average_pts_following_turnover': [pointValue]
+    })
 
-# Uses concurrent processing to calculate turnover point averages for multiple teams simultaneously.
-def calculateTeamTurnoverPointsAverageConcurrent(allPlays, teams, num_threads=10):
+    return season_turnover_data
+
+def calculateSeasonTurnoverPointsAverageConcurrent(allPlays, seasons, num_threads=10):
     with ThreadPoolExecutor(max_workers=num_threads) as executor:
-        # Calculate point values concurrently for each team
-        results = list(executor.map(calculateTeamTurnoverPointsAverage, [allPlays] * len(teams), teams))
+        # Calculate point values concurrently for each season
+        results = list(executor.map(calculateTurnoverPointsAveragePerSeason, [allPlays] * len(seasons), seasons))
 
     return results
 
-
 # average points following a turnover ended up equating to 2.9600137909440063 - this does not factor in pick 6's
 def calculateTotalTurnoverPointValue(allPlays, num_threads=10):
-    # I organized by teams, so I can see which teams capitalize on turnovers the most (I was curious)
-    teams = list(allPlays.posteam.unique())
-    #teams = ["NYJ"]
-    team_point_values = calculateTeamTurnoverPointsAverageConcurrent(allPlays, teams, num_threads)
+    seasons = list(range(2020, 2023 + 1))
+    season_point_values = calculateSeasonTurnoverPointsAverageConcurrent(allPlays, seasons, num_threads)
 
-    averageValue = sum(team_point_values) / len(teams)
-    return averageValue
+    # Concatenate the DataFrames for each season into one
+    combined_df = pd.concat(season_point_values, ignore_index=True)
+
+    return combined_df
 
 
 if __name__ == '__main__':
-    years = list(range(1999, 2023 + 1))
+    years = list(range(2020, 2023 + 1))
     allPlays = nfl.import_pbp_data(years)
-    print(calculateTotalTurnoverPointValue(allPlays, num_threads=10))
+    print(calculateTotalTurnoverPointValue(allPlays, 10).to_string())
