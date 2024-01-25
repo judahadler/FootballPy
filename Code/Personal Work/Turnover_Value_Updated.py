@@ -4,10 +4,9 @@ from concurrent.futures import ThreadPoolExecutor
 
 # This code attempts to assign a simple point value to a turnover.  By averaging the points scored on drives following
 # turnovers, we can see the offensive value.  The difficult part is assessing the defensive point value as well.
-
-
 #  TODO: I also need to account for turnovers on the last play of halves/games - cant count the following drive
 
+#Find total points scored for a given season
 def getPointsPerSeason(pbp, season):
     searchSeason = pbp[pbp['season'] == season]
     gameTotal = searchSeason.groupby(['season', 'game_id']).agg({'total': ['first']}).reset_index()
@@ -16,7 +15,7 @@ def getPointsPerSeason(pbp, season):
     seasonTotal.columns = ['season', 'total_points_scored_in_season']
     return seasonTotal
 
-
+#Find the drive ids for all turnovers in a season
 def getTurnoverDriveIdsPerSeason(pbp, season):
     pbp_tos = pbp[((pbp['season'] == season) &
                    ((pbp['drive_end_transition'] == 'INTERCEPTION') | (pbp['drive_end_transition'] == 'FUMBLE')) &
@@ -27,6 +26,8 @@ def getTurnoverDriveIdsPerSeason(pbp, season):
 
     return pbp_tos_filtered
 
+
+#Get drive reults for all drives following a turnover
 def getResultsPostTurnoverDrives(pbp, season):
     turnover_df = getTurnoverDriveIdsPerSeason(pbp, season)
     turnover_df['drive'] += 1
@@ -72,6 +73,7 @@ def getResultsPostTurnoverDrives(pbp, season):
 
     postTurnOverDrivesAggs.rename(columns={'defteam': 'total_drives'}, inplace=True)
 
+    # Find points scored defensively off of turnovers
     defResult = findDefPtsPerSeason(pbp, season)
     result = pd.merge(postTurnOverDrivesAggs, defResult, on=['season'], how='inner')
     result['total_turnover_points'] = result['total_off_points'] + result['total_def_points']
@@ -80,6 +82,7 @@ def getResultsPostTurnoverDrives(pbp, season):
 
     return result
 
+#Calculate defensive points scored per season - doesnt include extra points and 2pointconvs after return tds
 def findDefPtsPerSeason(pbp, season):
     pbp_tos = pbp[((pbp['season'] == season) &
                    ((pbp['drive_end_transition'] == 'INTERCEPTION') | (pbp['drive_end_transition'] == 'FUMBLE')) &
@@ -89,6 +92,7 @@ def findDefPtsPerSeason(pbp, season):
 
     return pbp_def_points
 
+#process a single season
 def process_season(season):
     pbp = nfl.import_pbp_data([season])
     getPointsPerSeason(pbp, 2023)
