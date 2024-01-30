@@ -1,37 +1,39 @@
 import nfl_data_py as nfl
 import seaborn as sns
+import numpy as np
 
 # This code attempts to show which quarterbacks get more roughing the passer calls
 # As it stands - no conclusion can be drawn regarding generosity of calls - if anything it seems to show a relationship
 # between time to throw and roughing the passer or qb hits and roughing the passer
 
+# I later realized that there is a column for 'qb_hit' - so I will change the analysis to reflect calls per qb_hit and
+# not calls per pass attempt
+
 # TODO: Change the metric to roughing call per passing play or per qb hit - not roughing call per game
 
+
 if __name__ == '__main__':
-    # Prepare Penalty Data
+    # Prepare Penalty/Passing Data
     sns.set_theme(style="whitegrid", palette="colorblind")
-    seasons = range(2011, 2023 + 1)
+    seasons = range(2000, 2023 + 1)
     pbp = nfl.import_pbp_data(seasons)
 
-    # Get all roughing the passer calls
-    pbp_roughing_game = pbp.groupby(['game_id', 'season', 'passer', 'passer_id'], as_index=False)['penalty_type'] \
-        .apply(lambda x: (x == 'Roughing the Passer').sum()) \
-        .fillna(0)
-    pbp_roughing_game = pbp_roughing_game.rename(columns={'penalty_type': 'roughing_calls'})
+    # Clean up the data so we can track all qb hits and roughing calls
+    pbp_hits = pbp[(pbp['qb_hit'] == 1) | (pbp['penalty_type'] == "Roughing the Passer")]
+    pbp_hits = pbp_hits[['season', 'passer', 'passer_id', 'penalty_type', 'qb_hit']]
+    pbp_hits['roughing_call'] = np.where(pbp_hits["penalty_type"] == 'Roughing the Passer', 1, 0)
 
-    # Get roughing the passer calls per passer per game
-    pbp_roughing_game_season = pbp_roughing_game.groupby(['passer', 'passer_id']).agg({"roughing_calls": ["sum", "count"]})
-    pbp_roughing_game_season.columns = [f"{col[0]}_{col[1]}" if col[1] != '' else col[0] for col in pbp_roughing_game_season.columns]
-    pbp_roughing_game_season = pbp_roughing_game_season.query("roughing_calls_count > 50")
-    pbp_roughing_game_season.reset_index(inplace=True)
+    # Group and Agg
+    pbp_hits_qbs = pbp_hits\
+        .groupby(['passer', 'passer_id'])\
+        .agg({'qb_hit': ['count'], 'roughing_call': ['sum']}).reset_index()
 
-    # Rename the count column to 'games'
-    pbp_roughing_game_season = pbp_roughing_game_season.rename(columns={'roughing_calls_count': 'games'})
+    # Clean up the results and calculate calls per hit
+    pbp_hits_qbs.columns = ['passer', 'passer_id', 'qb_hits', 'roughing_calls']
+    pbp_hits_qbs = pbp_hits_qbs.query("qb_hits > 500")
+    pbp_hits_qbs['calls_per_hit'] = pbp_hits_qbs['roughing_calls'] / pbp_hits_qbs['qb_hits']
 
-    # Calculate roughing_calls_per_game
-    pbp_roughing_game_season['roughing_calls_per_game'] = pbp_roughing_game_season['roughing_calls_sum'] / pbp_roughing_game_season['games']
-    pbp_roughing_game_season_most = pbp_roughing_game_season.sort_values(by='roughing_calls_per_game', ascending=False)
-    pbp_roughing_game_season_least = pbp_roughing_game_season.sort_values(by='roughing_calls_per_game', ascending=True)
+    #Order the data by calls per hit
+    pbp_hits_qbs = pbp_hits_qbs.sort_values("calls_per_hit", ascending=False)
 
-    print("Most:")
-    print(pbp_roughing_game_season_most[['passer', 'roughing_calls_per_game', 'games']])
+    print(pbp_hits_qbs.to_string())
